@@ -1,6 +1,6 @@
 module Graphics.UI.GLFW.Netwire.Window.Core( WindowHandle, 
                                              Window(),
-                                             focusedWindow,
+                                             getFocusedWindow,
                                              giveFocusTo,
                                              swapBuffers
                                            ) where
@@ -29,8 +29,8 @@ giveFocusTo window = do
     GLFW.setTime tnew
     writeIORef focusedWindowRef $ Just window
 
-focusedWindow :: IO (Maybe Window)
-focusedWindow = readIORef focusedWindowRef
+getFocusedWindow :: IO (Maybe Window)
+getFocusedWindow = readIORef focusedWindowRef
 
 swapBuffers :: Window -> IO ()
 swapBuffers window = GLFW.swapBuffers $ windowHandle window
