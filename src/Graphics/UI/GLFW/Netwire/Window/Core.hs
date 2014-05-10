@@ -8,7 +8,7 @@ import qualified Graphics.UI.GLFW as GLFW
 import System.IO.Unsafe
 import Data.IORef
 
-{-# NOINLINE focusedWindow #-}
+{-# NOINLINE focusedWindowRef #-}
 focusedWindowRef :: IORef (Maybe Window)
 focusedWindowRef = unsafePerformIO $ newIORef Nothing
 
