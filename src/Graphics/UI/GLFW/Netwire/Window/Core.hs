@@ -1,7 +1,8 @@
 module Graphics.UI.GLFW.Netwire.Window( WindowHandle, 
-                                         Window(windowHandle),
+                                         Window(),
                                          focusedWindow,
-                                         giveFocusTo
+                                         giveFocusTo,
+                                         swapBuffers
                                       ) where
 
 import qualified Graphics.UI.GLFW as GLFW
@@ -30,3 +31,6 @@ giveFocusTo window = do
 
 focusedWindow :: IO (Maybe Window)
 focusedWindow = readIORef focusedWindowRef
+
+swapBuffers :: Window -> IO ()
+swapBuffers window = GLFW.swapBuffers $ windowHandle window
