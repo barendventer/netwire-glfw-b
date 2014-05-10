@@ -1,9 +1,9 @@
-module Graphics.UI.GLFW.Netwire.Window( WindowHandle, 
-                                         Window(),
-                                         focusedWindow,
-                                         giveFocusTo,
-                                         swapBuffers
-                                      ) where
+module Graphics.UI.GLFW.Netwire.Window.Core( WindowHandle, 
+                                             Window(),
+                                             focusedWindow,
+                                             giveFocusTo,
+                                             swapBuffers
+                                           ) where
 
 import qualified Graphics.UI.GLFW as GLFW
 import System.IO.Unsafe
