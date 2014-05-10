@@ -1,1 +1,1 @@
-module Graphics.UI.Netwire.Window () where
+module Graphics.UI.GLFW.Netwire.Window () where

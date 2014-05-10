@@ -1,5 +1,5 @@
 module Graphics.UI.GLFW.Netwire.Window( WindowHandle, 
-                                         Window,
+                                         Window(windowHandle),
                                          focusedWindow,
                                          giveFocusTo
                                       ) where
