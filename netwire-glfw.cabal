@@ -20,6 +20,7 @@ library
      Graphics.UI.GLFW.Netwire.Session
      Graphics.UI.GLFW.Netwire.Window
      Graphics.UI.GLFW.Netwire.Window.Core
+     Graphics.UI.GLFW.Netwire.Input.Core
   -- other-modules:       
   -- other-extensions:    
   build-depends:
