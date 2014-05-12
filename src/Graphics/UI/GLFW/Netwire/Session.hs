@@ -4,6 +4,7 @@ import Control.Wire.Session
 import Graphics.UI.GLFW(pollEvents,getTime)
 import Control.Monad.IO.Class(MonadIO(..))
 import Graphics.UI.GLFW.Netwire.Window.Core
+import Control.Applicative
 
 glfwClockSession :: (MonadIO m) => Session m (s -> Timed Double s)
 glfwClockSession = 
@@ -12,11 +13,22 @@ glfwClockSession =
         return (Timed 0, loop t0) 
   where
     loop tprev = Session $ do
-        w <- liftIO getFocusedWindow
-        case w of
-             Nothing -> return ()
-             Just cw -> liftIO $ swapBuffers cw
-        liftIO $ pollEvents
+--        w <- liftIO getFocusedWindow
+--        case w of
+--             Nothing -> return ()
+--             Just cw -> liftIO $ swapBuffers cw
+        liftIO pollEvents
         t <- liftIO $ fmap (maybe 0 id) getTime
         let dt = t-tprev
-        dt `seq` return (Timed dt, loop t) 
+        dt `seq` return (Timed dt, loop t)
+
+glfwClockSession_ :: (MonadIO m, Applicative m) => Session m (Timed Double ())
+glfwClockSession_ = glfwClockSession <*> pure ()
+
+glfwCountSession :: (MonadIO m) => t -> Session m (s -> Timed t s)
+glfwCountSession dt = Session $ do
+    liftIO pollEvents
+    return (Timed dt, glfwCountSession dt)
+
+glfwCountSession_ :: (MonadIO m, Applicative m) => t -> Session m (Timed t ())
+glfwCountSession_ dt = countSession dt <*> pure ()
