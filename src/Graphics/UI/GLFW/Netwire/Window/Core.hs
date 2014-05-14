@@ -11,25 +11,38 @@ module Graphics.UI.GLFW.Netwire.Window.Core( WindowHandle,
 
 --Mostly re-exports from GLFW intended for use with annotated Window type for the netwire session
 import qualified Graphics.UI.GLFW as GLFW
+import Prelude hiding ((.))
 --import qualified Graphics.Rendering.GL as GL
 import System.IO.Unsafe
 import Data.IORef
+import Data.Set(Set)
+import qualified Data.Set as Set
+import Control.Wire
 
-{-# NOINLINE focusedWindowRef #-}
-focusedWindowRef :: IORef (Maybe Window)
-focusedWindowRef = unsafePerformIO $ newIORef Nothing
+--Avoid repeatedly setting GL Mode
+--{-# NOINLINE lastFocusedWindowRef #-}
+--lastFocusedWindowRef :: IORef (Maybe Window)
+--lastFocusedWindowRef = unsafePerformIO $ newIORef Nothing
 
 type WindowHandle = GLFW.Window
 
--- |Like GLFW windows, but with fewer options for setting your own callbacks. glfw-netwire-b also manages the GLFW clock locally for each window.
-data Window = Window { currentTime :: IORef Double, windowHandle :: WindowHandle{-, glMode :: IORef (VideoMode -> IO ()) -} }
+type GLParams = ()
+type Window = ()
+
+data WindowRecord scene = WindowRecord { glDrawSetupFunction :: IORef (IO ()), 
+                                        glSceneDrawFunction :: IORef (scene -> IO ()),
+                                        extensionsDesired :: IORef (Set String),
+                                        windowHandle :: WindowHandle }
+
+mkWindow :: (GLParams -> IO ()) -> (GLParams -> scene -> IO ()) -> [String]
+mkWindow drawSetup drawScene = undefined
 
 --Even though it is possible given the data declaration, the implementation of netwire-glfw-b
 --should guarantee that any Window with the same WindowHandle is the same Window
-instance Eq Window where
-   w1 == w2 = windowHandle w1 == windowHandle w2
+--instance Eq (Window t) where
+--   w1 == w2 = windowHandle w1 == windowHandle w2
 
-type VideoMode = GLFW.VideoMode
+type GLDrawParams = GLFW.VideoMode
 
 -- | Returns the size of a netwire-glfw-b window as a width-height pair
 getWindowSize :: Window -> IO (Int,Int)
@@ -42,6 +55,8 @@ setWindowSize :: Window -- ^ The window to resize
               -> IO ()
 setWindowSize window width height = GLFW.setWindowSize (windowHandle window) width height
 
+{--
+ 
 giveFocusTo :: Window -> IO ()
 giveFocusTo window = do
     currentWindow <- readIORef focusedWindowRef
@@ -77,6 +92,8 @@ getWindowFocusCallback _ _ _                       = loseFocus
 getFocusedWindow :: IO (Maybe Window)
 getFocusedWindow = readIORef focusedWindowRef
 
+--
+
 swapBuffers :: Window -> IO ()
 swapBuffers window = GLFW.swapBuffers $ windowHandle window
 
@@ -85,8 +102,9 @@ createWindow width height name = do
     Just wh <- GLFW.createWindow width height name Nothing Nothing
     t <- newIORef 0
     let window = Window t wh
-    GLFW.setWindowFocusCallback wh $ Just(getWindowFocusCallback window)
+    GLFW.setWindowFocusCallback wh $ Just(GLFW.getWindowFocusCallback window)
     return window
 
 --initializeWindowSubsystem :: IO ()
 --initializeWindowSubsystem
+--}
