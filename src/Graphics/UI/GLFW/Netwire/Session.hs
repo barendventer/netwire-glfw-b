@@ -25,6 +25,8 @@ glfwClockSession =
 glfwClockSession_ :: (MonadIO m, Applicative m) => Session m (Timed Double ())
 glfwClockSession_ = glfwClockSession <*> pure ()
 
+--The count session will slow down time in the game if GLFW starts to drop frames
+-- by fixing the length of time progressed by each tick of the GLFW game loop
 glfwCountSession :: (MonadIO m) => t -> Session m (s -> Timed t s)
 glfwCountSession dt = Session $ do
     liftIO pollEvents

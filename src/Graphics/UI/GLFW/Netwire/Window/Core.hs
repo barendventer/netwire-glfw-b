@@ -1,11 +1,11 @@
 module Graphics.UI.GLFW.Netwire.Window.Core( WindowHandle, 
                                              Window(),
-                                             VideoMode(..),
-                                             getFocusedWindow,
-                                             getWindowSize,
-                                             setWindowSize,
-                                             swapBuffers,
-                                             createWindow--,
+                                             --VideoMode(..),
+                                             --getFocusedWindow,
+                                             --getWindowSize,
+                                             --setWindowSize,
+                                             --swapBuffers,
+                                             --createWindow--,
                                              --getVideoMode ??
                                            ) where
 
@@ -27,12 +27,12 @@ import Control.Wire
 type WindowHandle = GLFW.Window
 
 type GLParams = ()
-type Window = ()
+--type Window = ()
 
-data WindowRecord scene = WindowRecord { glDrawSetupFunction :: IORef (IO ()), 
-                                        glSceneDrawFunction :: IORef (scene -> IO ()),
-                                        extensionsDesired :: IORef (Set String),
-                                        windowHandle :: WindowHandle }
+data Window = WindowRecord { --glDrawSetupFunction :: IORef (IO ()), 
+                             --glSceneDrawFunction :: IORef (scene -> IO ()),
+                              extensionsDesired :: IORef (Set String),
+                              windowHandle :: WindowHandle }
 
 mkWindow :: (GLParams -> IO ()) -> (GLParams -> scene -> IO ()) -> [String]
 mkWindow drawSetup drawScene = undefined
