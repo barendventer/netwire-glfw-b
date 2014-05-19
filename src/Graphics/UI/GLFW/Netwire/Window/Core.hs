@@ -1,5 +1,6 @@
 module Graphics.UI.GLFW.Netwire.Window.Core( WindowHandle, 
-                                             Window(),
+                                             Window(..),
+                                             GLContext(..),
                                              --VideoMode(..),
                                              --getFocusedWindow,
                                              --getWindowSize,
@@ -26,16 +27,18 @@ import Control.Wire
 
 type WindowHandle = GLFW.Window
 
-type GLParams = ()
+newtype GLContext = GLContext { glContextNaughtyBits :: Window }
+
 --type Window = ()
 
-data Window = WindowRecord { --glDrawSetupFunction :: IORef (IO ()), 
-                             --glSceneDrawFunction :: IORef (scene -> IO ()),
-                              extensionsDesired :: IORef (Set String),
-                              windowHandle :: WindowHandle }
+data Window = Window { extensionsDesired :: IORef (Set String),
+                       windowHandle :: WindowHandle }
 
-mkWindow :: (GLParams -> IO ()) -> (GLParams -> scene -> IO ()) -> [String]
-mkWindow drawSetup drawScene = undefined
+inWindow :: Window -> (GLContext -> IO ()) -> IO ()
+inWindow window drawAction = drawAction (GLContext window)
+
+--mkWindow :: (GLParams -> IO ()) -> (GLParams -> scene -> IO ()) -> [String]
+--mkWindow drawSetup drawScene = undefined
 
 --Even though it is possible given the data declaration, the implementation of netwire-glfw-b
 --should guarantee that any Window with the same WindowHandle is the same Window
@@ -53,8 +56,7 @@ setWindowSize :: Window -- ^ The window to resize
               -> Int    -- ^ The new width of the window
               -> Int    -- ^ The new height of the window
               -> IO ()
-setWindowSize window width height = GLFW.setWindowSize (windowHandle window) width height
-
+setWindowSize window = GLFW.setWindowSize (windowHandle window) 
 {--
  
 giveFocusTo :: Window -> IO ()
