@@ -1,25 +1,32 @@
-module Graphics.UI.GLFW.Netwire.Window.Core( WindowHandle, 
-                                             Window(..),
-                                             GLContext(..),
-                                             --VideoMode(..),
-                                             --getFocusedWindow,
-                                             --getWindowSize,
-                                             --setWindowSize,
-                                             --swapBuffers,
-                                             --createWindow--,
-                                             --getVideoMode ??
-                                           ) where
+module Graphics.UI.GLFW.Netwire.Window.Core
+( WindowHandle, 
+  Window(..),
+  GLContext(..),
+  getWindowSize,
+  setWindowSize,
+  inWindow,
+  InputBuffer(..)                                   
+  --VideoMode(..),
+  --getFocusedWindow,
+  --getWindowSize,
+  --setWindowSize,
+  --swapBuffers,
+  --createWindow--,
+  --getVideoMode ??
+) where
 
 --Mostly re-exports from GLFW intended for use with annotated Window type for the netwire session
 import qualified Graphics.UI.GLFW as GLFW
 import Prelude hiding ((.))
 --import qualified Graphics.Rendering.GL as GL
-import System.IO.Unsafe
 import Data.IORef
 import Data.Set(Set)
 import qualified Data.Set as Set
 import Control.Wire
-
+import Control.Monad.Trans.Except
+import Control.Monad.IO.Class
+import Graphics.UI.GLFW.Netwire.Exception
+    
 --Avoid repeatedly setting GL Mode
 --{-# NOINLINE lastFocusedWindowRef #-}
 --lastFocusedWindowRef :: IORef (Maybe Window)
@@ -31,8 +38,39 @@ newtype GLContext = GLContext { glContextNaughtyBits :: Window }
 
 --type Window = ()
 
-data Window = Window { extensionsDesired :: IORef (Set String),
-                       windowHandle :: WindowHandle }
+newtype InputBuffer = InputBuffer { inputBufferNaughtyBits :: IORef () }
+ 
+data Window = Window { windowHandle :: WindowHandle, windowNaughtyBits :: IORef (Maybe WindowRecord) }
+
+data WindowRecord = 
+  WindowRecord { extensionsDesiredField :: IORef (Set String),
+                 stateWireField :: IORef (Wire Double () IO InputBuffer ()),
+                 lastInput :: InputBuffer 
+               }
+
+getStateWire :: (MonadIO m) => Window -> ExceptT GLFWSessionError m (Wire Double () IO InputBuffer ())
+getStateWire window = do
+    wrec <- windowRecord window
+    liftIO $ readIORef (stateWireField wrec)
+
+setStateWire window sw = do
+    wrec <- windowRecord window
+    liftIO $ writeIORef (stateWireField wrec) sw
+
+modifyStateWire window f = do
+    wrec <- windowRecord window
+    sw <- liftIO $ readIORef $ stateWireField wrec
+    liftIO $ writeIORef (stateWireField wrec) (f sw)   
+
+windowRecord :: (MonadIO m) => Window -> ExceptT GLFWSessionError m WindowRecord
+windowRecord window = do
+    winrec <- liftIO $ readIORef (windowNaughtyBits window)
+    case winrec of
+        Nothing -> throwE GLFWSessionErrorWindowClosed
+        Just rec -> return rec
+
+attachWire :: (MonadIO m) => Window -> Wire Double () IO InputBuffer () -> ExceptT GLFWSessionError m ()
+attachWire window wire = modifyStateWire window (--> wire)
 
 inWindow :: Window -> (GLContext -> IO ()) -> IO ()
 inWindow window drawAction = drawAction (GLContext window)
@@ -42,10 +80,10 @@ inWindow window drawAction = drawAction (GLContext window)
 
 --Even though it is possible given the data declaration, the implementation of netwire-glfw-b
 --should guarantee that any Window with the same WindowHandle is the same Window
---instance Eq (Window t) where
---   w1 == w2 = windowHandle w1 == windowHandle w2
+instance Eq Window where
+   w1 == w2 = windowHandle w1 == windowHandle w2
 
-type GLDrawParams = GLFW.VideoMode
+--type GLDrawParams = GLFW.VideoMode
 
 -- | Returns the size of a netwire-glfw-b window as a width-height pair
 getWindowSize :: Window -> IO (Int,Int)

@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-
 module Graphics.UI.GLFW.Netwire.Token.Core( 
    checkout,
    checkin,
@@ -16,33 +14,16 @@ module Graphics.UI.GLFW.Netwire.Token.Core(
 import qualified Data.Set as Set
 import qualified Graphics.UI.GLFW as GLFW
 import Data.IORef
-import Data.Typeable(Typeable)
-import Data.Data(Data)
 import Control.Monad.Trans.Except
 import System.IO.Unsafe
 import Control.Monad.IO.Class
-import Control.Exception
 import Graphics.UI.GLFW.Netwire.Window.Core
 import Control.Applicative((<$>))
-
-data GLFWError = GLFWError GLFW.Error String deriving (Eq,Ord,Data,Read,Show,Typeable)
+import Graphics.UI.GLFW.Netwire.Exception
 
 type GLFWVersion = GLFW.Version
 
 getGLFWVersion = GLFW.getVersion
-
-instance Exception GLFWError
-
---Un-enumerated errors in the GLFW library should ideally be prevented by the library
-data GLFWSessionError = GLFWSessionErrorAlreadyInitialized
-                      | GLFWSessionErrorAlreadyFinalized
-                      | GLFWSessionErrorInitializationFailed
-                      | GLFWSessionErrorInvalidToken
-                      | GLFWSessionErrorGLFWErrorOccured GLFWError
-                      | GLFWSessionErrorOther String --Should never be used from netwire-glfw-b itself
-   deriving(Eq,Show,Ord,Data,Read,Typeable)
-
-instance Exception GLFWSessionError
 
 --Singleton to ensure only one GLFW token ever is valid
 {-# NOINLINE glfwIsInitialized #-}
@@ -100,6 +81,7 @@ data TokenGlobalState = TokenGlobalState {
 
 emptyWindowBuffer :: [Window]
 emptyWindowBuffer = []
+
 emptyErrorBuffer :: [GLFWError]
 emptyErrorBuffer = []
 
@@ -110,6 +92,22 @@ getTokenState tk = do
           Left  _ -> throwE GLFWSessionErrorInvalidToken
           Right g -> return g
 
+appendWindow :: (MonadIO m) => Token -> Window -> ExceptT GLFWSessionError m ()
+appendWindow tk window = do
+     tkSt <- getTokenState
+     liftIO $ do
+        currentWindows <- readIORef (windowBuffer tkSt)
+        writeIORef (windowBuffer tkSt) (window : currentWindows)
+
+newWindow :: (MonadIO m) => Token -> [String] -> Int -> Int -> String -> ExceptT m GLFWSessionError Window
+newWindow tk exts x y name = 
+   liftIO $ do
+       wh <- GLFW.createWindow x y name 
+       return Window { extensionsDesired = Set.fromList exts,
+                       windowHandle = wh,
+                       stateWire = inhibit  
+                     }
+ 
 clearTokenErrorBuffer :: (MonadIO m) => Token -> ExceptT GLFWSessionError m ()
 clearTokenErrorBuffer tk = do 
     tkState <- getTokenState tk

@@ -19,15 +19,18 @@ library
   exposed-modules:
      Graphics.UI.GLFW.Netwire.Session
      Graphics.UI.GLFW.Netwire.Window
+     Graphics.UI.GLFW.Netwire.Context
      Graphics.UI.GLFW.Netwire.Window.Core
      Graphics.UI.GLFW.Netwire.Input.Core
+     Graphics.UI.GLFW.Netwire.Token.Core
+     Graphics.UI.GLFW.Netwire.Exception
   -- other-modules:       
   -- other-extensions:    
   build-depends:
        base >=4.6 && <4.7,
        GLFW-b >=1.4,
        netwire >=5.0,
-       transformers >=0.2,
+       transformers >=0.4,
        containers >=0.5
   hs-source-dirs:      src
   default-language:    Haskell2010
