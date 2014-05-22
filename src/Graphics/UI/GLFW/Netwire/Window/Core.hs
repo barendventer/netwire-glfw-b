@@ -86,9 +86,9 @@ attachWire window wire = modifyStateWire window (--> wire)
 inWindow :: Window -> (GLContext -> IO ()) -> IO ()
 inWindow window drawAction = drawAction (GLContext window)
 
-newWindowRecord :: IO WindowRecord
-newWindowRecord = do
-   buf <- mkEmptyInputBuffer
+newWindowRecord :: WindowHandle -> IO WindowRecord
+newWindowRecord wh = do
+   buf <- mkEmptyInputBuffer wh
 --   extsD <- newIORef (Set.fromList exts)
    stWire <- newIORef (inhibit ())
    return $ WindowRecord stWire buf
@@ -96,7 +96,7 @@ newWindowRecord = do
 --dangerous, only call once for the same input
 annotateWindow :: WindowHandle -> IO Window
 annotateWindow wh = do
-   wrec <- newWindowRecord 
+   wrec <- newWindowRecord wh 
    wrecPtr <- newIORef (Just wrec)
    return $ Window wh wrecPtr
  
