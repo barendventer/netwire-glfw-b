@@ -5,7 +5,8 @@ module Graphics.UI.GLFW.Netwire.Window.Core
   getWindowSize,
   setWindowSize,
   inWindow,
-  InputBuffer(..)                                   
+  InputBuffer(..),
+  annotateWindow                                   
   --VideoMode(..),
   --getFocusedWindow,
   --getWindowSize,
@@ -19,6 +20,7 @@ module Graphics.UI.GLFW.Netwire.Window.Core
 import qualified Graphics.UI.GLFW as GLFW
 import Prelude hiding ((.))
 --import qualified Graphics.Rendering.GL as GL
+import Control.Applicative
 import Data.IORef
 import Data.Set(Set)
 import qualified Data.Set as Set
@@ -39,13 +41,16 @@ newtype GLContext = GLContext { glContextNaughtyBits :: Window }
 --type Window = ()
 
 newtype InputBuffer = InputBuffer { inputBufferNaughtyBits :: IORef () }
+
+mkEmptyInputBuffer :: IO InputBuffer
+mkEmptyInputBuffer = InputBuffer <$> newIORef ()
  
 data Window = Window { windowHandle :: WindowHandle, windowNaughtyBits :: IORef (Maybe WindowRecord) }
 
 data WindowRecord = 
-  WindowRecord { extensionsDesiredField :: IORef (Set String),
+  WindowRecord { 
                  stateWireField :: IORef (Wire Double () IO InputBuffer ()),
-                 lastInput :: InputBuffer 
+                 lastInputField :: InputBuffer 
                }
 
 getStateWire :: (MonadIO m) => Window -> ExceptT GLFWSessionError m (Wire Double () IO InputBuffer ())
@@ -75,9 +80,20 @@ attachWire window wire = modifyStateWire window (--> wire)
 inWindow :: Window -> (GLContext -> IO ()) -> IO ()
 inWindow window drawAction = drawAction (GLContext window)
 
---mkWindow :: (GLParams -> IO ()) -> (GLParams -> scene -> IO ()) -> [String]
---mkWindow drawSetup drawScene = undefined
+newWindowRecord :: IO WindowRecord
+newWindowRecord = do
+   buf <- mkEmptyInputBuffer
+--   extsD <- newIORef (Set.fromList exts)
+   stWire <- newIORef (inhibit ())
+   return $ WindowRecord stWire buf
 
+--dangerous, only call once for the same input
+annotateWindow :: WindowHandle -> IO Window
+annotateWindow wh = do
+   wrec <- newWindowRecord 
+   wrecPtr <- newIORef (Just wrec)
+   return $ Window wh wrecPtr
+ 
 --Even though it is possible given the data declaration, the implementation of netwire-glfw-b
 --should guarantee that any Window with the same WindowHandle is the same Window
 instance Eq Window where

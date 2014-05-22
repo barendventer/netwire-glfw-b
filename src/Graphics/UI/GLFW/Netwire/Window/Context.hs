@@ -7,26 +7,24 @@ module Graphics.UI.Netwire.Window.Context(
    getContextVersionMinor,
    getContextVersionRevision,
    getContextCoreProfileOnly,
-   getSupportedExtensions,
+   extensionSupported,
    getContextFramebufferSize,
    getContextRobustness   
 ) where
 
 import Graphics.UI.GLFW.Netwire.Window.Core(GLContext(..), WindowHandle, Window(..))
 import qualified Graphics.UI.GLFW as GLFW
-import qualified Data.Set as Set
-import Control.Monad(filterM,(<=<))
-import Data.IORef
 
 withContext :: (WindowHandle -> b) -> GLContext -> b
 withContext glfwFunc = glfwFunc . windowHandle . glContextNaughtyBits
 
 type GLContextAccessor t = GLContext -> IO t
--- | Get the extensions supported by the window
-getSupportedExtensions :: GLContextAccessor [String]
-getSupportedExtensions = filterM GLFW.extensionSupported . Set.toList <=< readIORef . extensionsDesired . glContextNaughtyBits
--- | Check if the OpenGL context is running in debug mode
 
+-- | Get the extensions supported by the window
+extensionSupported :: String -> IO Bool 
+extensionSupported = GLFW.extensionSupported
+
+-- | Check if the OpenGL context is running in debug mode
 isOpenGLDebugContext :: GLContextAccessor Bool
 isOpenGLDebugContext = withContext GLFW.getWindowOpenGLDebugContext
 
@@ -53,6 +51,7 @@ getContextVersionRevision :: GLContextAccessor Int
 getContextVersionRevision = withContext GLFW.getWindowContextVersionRevision
 
 type ContextRobustness = GLFW.ContextRobustness
+
 getContextRobustness :: GLContextAccessor ContextRobustness
 getContextRobustness = withContext GLFW.getWindowContextRobustness
 

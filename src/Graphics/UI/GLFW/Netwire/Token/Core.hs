@@ -20,6 +20,27 @@ import Control.Monad.IO.Class
 import Graphics.UI.GLFW.Netwire.Window.Core
 import Control.Applicative((<$>))
 import Graphics.UI.GLFW.Netwire.Exception
+import Control.Monad.Trans.Reader
+import Control.Exception
+
+type GLFWb a = ReaderT Token (ExceptT GLFWSessionError IO) 
+
+toIOException :: (Exception e) => ExceptT e IO a -> IO a
+toIOException action = do
+   unsafe <- runExceptT action
+   case unsafe of
+       Left e -> throw e
+       Right r -> return r
+
+safeRunGLFWb :: GLFWb a -> ExceptT GLFWSessionError IO a
+safeRunGLFWb action = do
+   tk <- checkout
+   result <- runReaderT tk action
+   checkin tk
+   return result
+   
+runGLFWb :: GLFWb a -> IO a
+runGLFWb action = toIOException . safeRunGLFWb $ action
 
 type GLFWVersion = GLFW.Version
 
