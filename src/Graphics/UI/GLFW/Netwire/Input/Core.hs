@@ -5,7 +5,9 @@ module Graphics.UI.GLFW.Netwire.Input.Core(
   MouseCursorPosition,
   JoystickState,
   WindowEventState,
-  clipboard
+  clipboard,
+  InputBuffer(..),
+  mkEmptyInputBuffer
 ) where
 
 import Prelude hiding ((.))
@@ -37,7 +39,7 @@ data MouseButtonEventData = MouseButtonEventData GLFW.MouseButtonState GLFW.Modi
 
 type MouseCursorPosition = (Double,Double)
 
-data JoystickState = JoystickUnplugged | JoystickState [Bool] [Double]
+data JoystickState = JoystickUnplugged | JoystickState String [Bool] [Double]
 
 data WindowEventState = WindowEventState {
     focused :: Bool,
@@ -53,27 +55,35 @@ data WindowEventState = WindowEventState {
     scrollWheelX :: Double,
     scrollWheelY :: Double
 }
-{-
-initialEventState = runReaderT $ do
+
+getInitialEventState :: WindowHandle -> IO WindowEventState
+getInitialEventState = runReaderT $ do
+    f <- (GLFW.FocusState'Focused==) <$> r GLFW.getWindowFocused
     c <- r GLFW.getClipboardString
     m <- r GLFW.getCursorPos
-    
+    x <- r GLFW.windowShouldClose
+    cmode <- r GLFW.getCursorInputMode
+    let v = cmode /= GLFW.CursorInputMode'Disabled
+    let e = cmode /= GLFW.CursorInputMode'Hidden
+    k <- (GLFW.StickyKeysInputMode'Enabled==) <$> r GLFW.getStickyKeysInputMode
+    return $ initializeEventState f c m x v e k 
   where 
-   init f c m x i v k = WindowEventState {
+   initializeEventState f c m x v e k = WindowEventState {
     focused = f,
     clipboard = c,
     mouseCursorPosition = m,
     closeRequest = x,
     buttonPresses = [],
     joysticks = replicate 16 JoystickUnplugged,
-    cursorInWindow = i,
-    cursorVisible = cv,
+    cursorInWindow = False,
+    cursorVisible = v,
+    cursorEnabled = e,
     stickyKeys = k,
     scrollWheelX = 0,
     scrollWheelY = 0
    }
    r = ReaderT
--}
+
 getInputBufferContents :: (MonadIO m) => InputBuffer -> ExceptT GLFWSessionError m WindowEventState
 getInputBufferContents ib = do
    unsafe_wes <- liftIO . readIORef . inputBufferNaughtyBits $ ib
@@ -93,7 +103,21 @@ modifyInputBuffer f ib = do
    wes <- getInputBufferContents ib
    unsafeSetInputBufferContents (f wes) ib
 
-modifyFocus :: (MonadIO m) => Bool -> InputBuffer -> ExceptT GLFWSessionError m ()
-modifyFocus ds = modifyInputBuffer $ \wes -> wes { focused = ds }
+--Reset the accumulating fields
+resetInputBuffer :: (MonadIO m) => InputBuffer -> ExceptT GLFWSessionError m ()
+resetInputBuffer = modifyInputBuffer $ \wes -> wes {
+   buttonPresses = [],
+   scrollWheelX = 0,
+   scrollWheelY = 0 
+   }
 
+--Pull the state from the joysticks
+pullJoysticks :: WindowHandle -> IO [JoystickState]
+pullJoysticks = undefined
 
+--Pull state for which there are no pushing callbacks
+updateInputBuffer :: (MonadIO m) => InputBuffer -> ExceptT GLFWSessionError m ()
+updateInputBuffer = undefined
+
+setFocus :: (MonadIO m) => Bool -> InputBuffer -> ExceptT GLFWSessionError m ()
+setFocus ds = modifyInputBuffer $ \wes -> wes { focused = ds }

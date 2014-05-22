@@ -23,7 +23,7 @@ import Graphics.UI.GLFW.Netwire.Exception
 import Control.Monad.Trans.Reader
 import Control.Exception
 
-type GLFWb a = ReaderT Token (ExceptT GLFWSessionError IO) 
+type GLFWb a = ReaderT Token (ExceptT GLFWSessionError IO) a
 
 toIOException :: (Exception e) => ExceptT e IO a -> IO a
 toIOException action = do
@@ -35,7 +35,7 @@ toIOException action = do
 safeRunGLFWb :: GLFWb a -> ExceptT GLFWSessionError IO a
 safeRunGLFWb action = do
    tk <- checkout
-   result <- runReaderT tk action
+   result <- runReaderT action tk
    checkin tk
    return result
    
@@ -115,11 +115,11 @@ getTokenState tk = do
 
 appendWindow :: (MonadIO m) => Token -> Window -> ExceptT GLFWSessionError m ()
 appendWindow tk window = do
-     tkSt <- getTokenState
+     tkSt <- getTokenState tk
      liftIO $ do
         currentWindows <- readIORef (windowBuffer tkSt)
         writeIORef (windowBuffer tkSt) (window : currentWindows)
-
+{-
 newWindow :: (MonadIO m) => Token -> [String] -> Int -> Int -> String -> ExceptT m GLFWSessionError Window
 newWindow tk exts x y name = 
    liftIO $ do
@@ -128,7 +128,8 @@ newWindow tk exts x y name =
                        windowHandle = wh,
                        stateWire = inhibit  
                      }
- 
+-} 
+
 clearTokenErrorBuffer :: (MonadIO m) => Token -> ExceptT GLFWSessionError m ()
 clearTokenErrorBuffer tk = do 
     tkState <- getTokenState tk
