@@ -19,6 +19,7 @@ data GLFWSessionError = GLFWSessionErrorAlreadyInitialized
                       | GLFWSessionErrorInitializationFailed
                       | GLFWSessionErrorInvalidToken
                       | GLFWSessionErrorWindowClosed
+                      | GLFWSessionErrorInputBufferClosed
                       | GLFWSessionErrorGLFWErrorOccured GLFWError
                       | GLFWSessionErrorOther String --Should never be used from netwire-glfw-b itself
    deriving(Eq,Show,Ord,Data,Read,Typeable)

@@ -19,7 +19,7 @@ library
   exposed-modules:
      Graphics.UI.GLFW.Netwire.Session
      Graphics.UI.GLFW.Netwire.Window
-     Graphics.UI.GLFW.Netwire.Context
+     Graphics.UI.GLFW.Netwire.Window.Context
      Graphics.UI.GLFW.Netwire.Window.Core
      Graphics.UI.GLFW.Netwire.Input.Core
      Graphics.UI.GLFW.Netwire.Token.Core

@@ -1,4 +1,4 @@
-module Graphics.UI.Netwire.Window.Context(
+module Graphics.UI.GLFW.Netwire.Window.Context(
    GLContext(),
    isOpenGLDebugContext,
    isOpenGLForwardCompatible,

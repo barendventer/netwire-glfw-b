@@ -1,12 +1,18 @@
 module Graphics.UI.GLFW.Netwire.Window.Core
 ( WindowHandle, 
   Window(..),
+  WindowRecord(..),
   GLContext(..),
   getWindowSize,
   setWindowSize,
   inWindow,
   InputBuffer(..),
-  annotateWindow                                   
+  annotateWindow,
+  getStateWire,
+  setStateWire,
+  modifyStateWire,
+  windowRecord,
+  attachWire                                   
   --VideoMode(..),
   --getFocusedWindow,
   --getWindowSize,
@@ -22,12 +28,11 @@ import Prelude hiding ((.))
 --import qualified Graphics.Rendering.GL as GL
 import Control.Applicative
 import Data.IORef
-import Data.Set(Set)
-import qualified Data.Set as Set
 import Control.Wire
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Graphics.UI.GLFW.Netwire.Exception
+import Graphics.UI.GLFW.Netwire.Input.Core
     
 --Avoid repeatedly setting GL Mode
 --{-# NOINLINE lastFocusedWindowRef #-}
@@ -40,28 +45,29 @@ newtype GLContext = GLContext { glContextNaughtyBits :: Window }
 
 --type Window = ()
 
-newtype InputBuffer = InputBuffer { inputBufferNaughtyBits :: IORef () }
-
-mkEmptyInputBuffer :: IO InputBuffer
-mkEmptyInputBuffer = InputBuffer <$> newIORef ()
  
 data Window = Window { windowHandle :: WindowHandle, windowNaughtyBits :: IORef (Maybe WindowRecord) }
 
 data WindowRecord = 
   WindowRecord { 
-                 stateWireField :: IORef (Wire Double () IO InputBuffer ()),
+                 stateWireField :: IORef (Wire Double () Identity InputBuffer (IO ())),
                  lastInputField :: InputBuffer 
                }
 
-getStateWire :: (MonadIO m) => Window -> ExceptT GLFWSessionError m (Wire Double () IO InputBuffer ())
+getStateWire :: (MonadIO m) => Window -> ExceptT GLFWSessionError m (Wire Double () Identity InputBuffer (IO()))
 getStateWire window = do
     wrec <- windowRecord window
     liftIO $ readIORef (stateWireField wrec)
 
+setStateWire :: (MonadIO m) => Window -> Wire Double () Identity InputBuffer (IO ()) -> ExceptT GLFWSessionError m ()
 setStateWire window sw = do
     wrec <- windowRecord window
     liftIO $ writeIORef (stateWireField wrec) sw
 
+modifyStateWire :: (MonadIO m) => 
+        Window 
+        -> (Wire Double () Identity InputBuffer (IO ()) -> Wire Double () Identity InputBuffer (IO ())) 
+        -> ExceptT GLFWSessionError m ()
 modifyStateWire window f = do
     wrec <- windowRecord window
     sw <- liftIO $ readIORef $ stateWireField wrec
@@ -74,7 +80,7 @@ windowRecord window = do
         Nothing -> throwE GLFWSessionErrorWindowClosed
         Just rec -> return rec
 
-attachWire :: (MonadIO m) => Window -> Wire Double () IO InputBuffer () -> ExceptT GLFWSessionError m ()
+attachWire :: (MonadIO m) => Window -> Wire Double () Identity InputBuffer (IO()) -> ExceptT GLFWSessionError m ()
 attachWire window wire = modifyStateWire window (--> wire)
 
 inWindow :: Window -> (GLContext -> IO ()) -> IO ()
@@ -98,6 +104,7 @@ annotateWindow wh = do
 --should guarantee that any Window with the same WindowHandle is the same Window
 instance Eq Window where
    w1 == w2 = windowHandle w1 == windowHandle w2
+
 
 --type GLDrawParams = GLFW.VideoMode
 
