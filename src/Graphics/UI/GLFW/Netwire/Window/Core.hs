@@ -48,6 +48,10 @@ newtype GLContext = GLContext { glContextNaughtyBits :: Window }
  
 data Window = Window { windowHandle :: WindowHandle, windowNaughtyBits :: IORef (Maybe WindowRecord) }
 
+--placeholder until input buffer is written
+type InputBuffer = ()
+mkEmptyInputBuffer wh = return ()
+
 data WindowRecord = 
   WindowRecord { 
                  stateWireField :: IORef (Wire Double () Identity InputBuffer (IO ())),
